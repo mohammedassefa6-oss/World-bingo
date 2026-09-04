@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beteseb Bingo</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #101827;
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 5px;
+      color: #4ade80;
+    }
+
+    .subtitle {
+      color: #cbd5e1;
+      margin-bottom: 20px;
+    }
+
+    .info {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .box {
+      flex: 1;
+      background: #1e293b;
+      padding: 12px 5px;
+      border-radius: 10px;
+    }
+
+    .box strong {
+      display: block;
+      font-size: 18px;
+      color: #4ade80;
+      margin-top: 5px;
+    }
+
+    .current {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    #currentNumber {
+      font-size: 42px;
+      font-weight: bold;
+      color: #facc15;
+      margin-top: 5px;
+    }
+
+    .letters {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      margin-bottom: 5px;
+    }
+
+    .letters div {
+      font-size: 20px;
+      font-weight: bold;
+      color: #4ade80;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+    }
+
+    .number {
+      background: #334155;
+      padding: 12px 2px;
+      border-radius: 7px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .called {
+      background: #16a34a;
+      color: white;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 15px;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #callBtn {
+      background: #22c55e;
+      color: #052e16;
+    }
+
+    #inviteBtn {
+      background: #2563eb;
+      color: white;
+    }
+
+    #status {
+      margin-top: 15px;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🎱 Beteseb Bingo</h1>
+  <div class="subtitle">Telegram Bingo Web App</div>
+
+  <div class="info">
+    <div class="box">
+      💰 Balance
+      <strong id="balance">100 ETB</strong>
+    </div>
+
+    <div class="box">
+      🎫 Cards
+      <strong id="cards">1</strong>
+    </div>
+
+    <div class="box">
+      👥 Referrals
+      <strong id="referrals">0</strong>
+    </div>
+  </div>
+
+  <div class="current">
+    <div>የተጠራው ቁጥር</div>
+    <div id="currentNumber">-</div>
+  </div>
+
+  <div class="letters">
+    <div>B</div>
+    <div>I</div>
+    <div>N</div>
+    <div>G</div>
+    <div>O</div>
+  </div>
+
+  <div id="board" class="board"></div>
+
+  <button id="callBtn" onclick="callNextNumber()">
+    🎯 ቁጥር ማውጣት
+  </button>
+
+  <button id="inviteBtn" onclick="inviteFriend()">
+    👥 ጓደኛ ጋብዝ
+  </button>
+
+  <div id="status">Firebase እየተገናኘ ነው...</div>
+
+</div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+  getDatabase,
+  ref,
+  get,
+  set,
+  update
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+
+/* Firebase Configuration */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBDO1Zorz2jicim-u5g9MN-COe_pVCpVYI",
+  authDomain: "world-bingo-2.firebaseapp.com",
+  databaseURL: "https://world-bingo-2-default-rtdb.firebaseio.com",
+  projectId: "world-bingo-2",
+  storageBucket: "world-bingo-2.firebasestorage.app",
+  messagingSenderId: "671762364377",
+  appId: "1:671762364377:web:0408268bb13428a04bcbc8",
+  measurementId: "G-B1WXVZ4JBE"
+};
+
+
+/* Firebase Start */
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+
+/* Telegram */
+
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+const telegramUser =
+  tg.initDataUnsafe?.user || null;
+
+const userId =
+  telegramUser?.id || "demo_user";
+
+
+/* User Data */
+
+let balance = 100;
+let referrals = 0;
+let cards = 1;
+
+
+/* Bingo Data */
+
+let currentNumber = null;
+let calledNumbers = new Set();
+
+
+/* Create Bingo Board */
+
+const board = document.getElementById("board");
+
+for (let i = 1; i <= 75; i++) {
+
+  const cell = document.createElement("div");
+
+  cell.className = "number";
+  cell.id = "number-" + i;
+  cell.textContent = i;
+
+  board.appendChild(cell);
+}
+
+
+/* Load User */
+
+async function loadUser() {
+
+  try {
+
+    const userRef = ref(db, "users/" + userId);
+    const snapshot = await get(userRef);
+
+    if (snapshot.exists()) {
+
+      const data = snapshot.val();
+
+      balance = data.balance ?? 100;
+      referrals = data.referrals ?? 0;
+      cards = data.cards ?? 1;
+
+    } else {
+
+      await set(userRef, {
+
+        balance: 100,
+        referrals: 0,
+        cards: 1,
+
+        name:
+          telegramUser?.first_name || "Player",
+
+        createdAt:
+          Date.now()
+
+      });
+
+    }
+
+    updateDisplay();
+
+    document.getElementById("status").textContent =
+      "✅ Firebase connected";
+
+  } catch (error) {
+
+    console.error(error);
+
+    document.getElementById("status").textContent =
+      "⚠️ Firebase connection error";
+
+  }
+}
+
+
+/* Load Game */
+
+async function loadGame() {
+
+  try {
+
+    const gameRef = ref(db, "games/current");
+    const snapshot = await get(gameRef);
+
+    if (snapshot.exists()) {
+
+      const data = snapshot.val();
+
+      currentNumber =
+        data.currentNumber ?? null;
+
+      const numbers =
+        data.calledNumbers ?? {};
+
+      calledNumbers =
+        new Set(Object.keys(numbers).map(Number));
+
+      updateBoard();
+      updateDisplay();
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+}
+
+
+/* Call Number */
+
+window.callNextNumber = async function () {
+
+  if (calledNumbers.size >= 75) {
+
+    alert("ሁሉም 75 ቁጥሮች ወጥተዋል!");
+
+    return;
+  }
+
+
+  let number;
+
+  do {
+
+    number =
+      Math.floor(Math.random() * 75) + 1;
+
+  } while (calledNumbers.has(number));
+
+
+  currentNumber = number;
+
+  calledNumbers.add(number);
+
+
+  const calledObject = {};
+
+  calledNumbers.forEach(n => {
+
+    calledObject[n] = true;
+
+  });
+
+
+  try {
+
+    await update(
+      ref(db, "games/current"),
+      {
+
+        currentNumber:
+          currentNumber,
+
+        calledNumbers:
+          calledObject,
+
+        lastUpdated:
+          Date.now()
+
+      }
+    );
+
+    updateBoard();
+    updateDisplay();
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert("ቁጥሩን ማስቀመጥ አልተቻለም");
+
+  }
+
+};
+
+
+/* Update Board */
+
+function updateBoard() {
+
+  for (let i = 1; i <= 75; i++) {
+
+    const cell =
+      document.getElementById("number-" + i);
+
+    if (calledNumbers.has(i)) {
+
+      cell.classList.add("called");
+
+    } else {
+
+      cell.classList.remove("called");
+
+    }
+
+  }
+
+}
+
+
+/* Update Display */
+
+function updateDisplay() {
+
+  document.getElementById("balance").textContent =
+    balance + " ETB";
+
+  document.getElementById("cards").textContent =
+    cards;
+
+  document.getElementById("referrals").textContent =
+    referrals;
+
+  document.getElementById("currentNumber").textContent =
+    currentNumber ?? "-";
+
+}
+
+
+/* Invite Friend */
+
+window.inviteFriend = function () {
+
+  const inviteLink =
+    "https://t.me/Ethio_Exam_Prep_Bot?start=invite_" +
+    userId;
+
+  const shareUrl =
+    "https://t.me/share/url?url=" +
+    encodeURIComponent(inviteLink) +
+    "&text=" +
+    encodeURIComponent(
+      "🎱 Beteseb Bingo ላይ አብረን እንጫወት!"
+    );
+
+  tg.openTelegramLink(shareUrl);
+
+};
+
+
+/* Start */
+
+loadUser();
+loadGame();
+
+</script>
+
+</body>
+</html>
