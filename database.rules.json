@@ -1,0 +1,35 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid",
+        ".write": false,
+        "balance": { ".write": false },
+        "cards": { ".write": false },
+        "referrals": { ".write": false },
+        "name": {
+          ".write": "auth != null && auth.uid == $uid"
+        }
+      }
+    },
+
+    "games": {
+      "current": {
+        ".read": "auth != null",
+        ".write": false
+      }
+    },
+
+    "rooms": {
+      "$roomId": {
+        ".read": "auth != null",
+        ".write": false,
+        "players": {
+          "$uid": {
+            ".read": "auth != null"
+          }
+        }
+      }
+    }
+  }
+}
