@@ -1,626 +1,238 @@
-
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="am">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beteseb Bingo</title>
-
 <style>
 *{box-sizing:border-box}
-
-body{
-margin:0;
-font-family:Arial,sans-serif;
-background:#101827;
-color:white;
-text-align:center
-}
-
-.container{
-max-width:500px;
-margin:auto;
-padding:18px
-}
-
-h1{
-color:#4ade80;
-margin:5px 0
-}
-
-.subtitle{
-color:#cbd5e1;
-margin-bottom:18px
-}
-
-.info{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:8px;
-margin-bottom:15px
-}
-
-.box{
-background:#1e293b;
-padding:10px 3px;
-border-radius:10px;
-font-size:13px
-}
-
-.box strong{
-display:block;
-font-size:17px;
-color:#4ade80;
-margin-top:5px
-}
-
-.current{
-background:#1e293b;
-padding:12px;
-border-radius:12px;
-margin-bottom:14px
-}
-
-#currentNumber{
-font-size:40px;
-font-weight:bold;
-color:#facc15;
-margin-top:5px
-}
-
-.bingo-title{
-display:grid;
-grid-template-columns:repeat(5,1fr);
-gap:5px;
-margin-bottom:5px
-}
-
-.bingo-title div{
-font-size:22px;
-font-weight:bold;
-color:#4ade80
-}
-
-.card{
-display:grid;
-grid-template-columns:repeat(5,1fr);
-gap:5px
-}
-
-.cell{
-aspect-ratio:1;
-display:flex;
-align-items:center;
-justify-content:center;
-background:#334155;
-border-radius:8px;
-font-size:17px;
-font-weight:bold;
-cursor:pointer
-}
-
-.cell.marked{
-background:#16a34a;
-color:white
-}
-
-.free{
-background:#2563eb;
-font-size:13px
-}
-
-button{
-width:100%;
-border:0;
-border-radius:10px;
-padding:14px;
-margin-top:14px;
-font-size:17px;
-font-weight:bold
-}
-
-#callBtn{
-background:#22c55e;
-color:#052e16
-}
-
-#bingoBtn{
-background:#facc15;
-color:#422006
-}
-
-#inviteBtn{
-background:#2563eb;
-color:white
-}
-
-#status{
-margin-top:14px;
-color:#94a3b8;
-font-size:14px
-}
+body{margin:0;font-family:Arial,sans-serif;background:#101827;color:white;text-align:center}
+.container{max-width:500px;margin:auto;padding:18px}
+h1{color:#4ade80;margin:5px 0}
+.subtitle{color:#cbd5e1;margin-bottom:18px}
+.info{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:15px}
+.box{background:#1e293b;padding:10px 3px;border-radius:10px;font-size:13px}
+.box strong{display:block;font-size:17px;color:#4ade80;margin-top:5px}
+.current{background:#1e293b;padding:12px;border-radius:12px;margin-bottom:14px}
+#currentNumber{font-size:40px;font-weight:bold;color:#facc15;margin-top:5px}
+.bingo-title{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:5px}
+.bingo-title div{font-size:22px;font-weight:bold;color:#4ade80}
+.card{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#334155;border-radius:8px;font-size:17px;font-weight:bold}
+.cell.marked{background:#16a34a;color:white}
+.free{background:#2563eb;font-size:13px}
+.stake-grid{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.cartela-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-top:14px}
+.cartela-cell{padding:8px 0;border-radius:6px;background:#334155;font-size:13px;font-weight:bold;cursor:pointer;border:none;color:white}
+.cartela-cell:disabled{background:#1e293b;color:#475569;cursor:not-allowed}
+button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;font-size:17px;font-weight:bold;cursor:pointer}
+.stake-btn{background:#22c55e;color:#052e16}
+#bingoBtn{background:#facc15;color:#422006}
+#status{margin-top:14px;color:#94a3b8;font-size:14px}
+.hidden{display:none}
 </style>
 </head>
-
 <body>
-
 <div class="container">
+  <h1>🎱 Beteseb Bingo</h1>
+  <div class="subtitle">Telegram Bingo Web App</div>
 
-<h1>🎱 Beteseb Bingo</h1>
-<div class="subtitle">Telegram Bingo Web App</div>
+  <div class="info">
+    <div class="box">💰 Balance<strong id="balance">-</strong></div>
+    <div class="box">🎫 Room<strong id="roomLabel">-</strong></div>
+    <div class="box">👥 Players<strong id="players">-</strong></div>
+  </div>
 
-<div class="info">
-<div class="box">
-💰 Balance
-<strong id="balance">100 ETB</strong>
-</div>
+  <div id="stakeScreen" class="stake-grid">
+    <button class="stake-btn" data-stake="10">Play 10</button>
+    <button class="stake-btn" data-stake="20">Play 20</button>
+    <button class="stake-btn" data-stake="50">Play 50</button>
+    <button class="stake-btn" data-stake="100">Play 100</button>
+  </div>
 
-<div class="box">
-🎫 Cards
-<strong id="cards">1</strong>
-</div>
+  <div id="cartelaScreen" class="hidden">
+    <div>Pick your cartela number:</div>
+    <div id="cartelaGrid" class="cartela-grid"></div>
+  </div>
 
-<div class="box">
-👥 Referrals
-<strong id="referrals">0</strong>
-</div>
-</div>
+  <div id="gameScreen" class="hidden">
+    <div class="current">
+      <div>የተጠራው ቁጥር</div>
+      <div id="currentNumber">-</div>
+    </div>
+    <div class="bingo-title"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
+    <div id="card" class="card"></div>
+    <button id="bingoBtn">🏆 BINGO!</button>
+  </div>
 
-<div class="current">
-<div>የተጠራው ቁጥር</div>
-<div id="currentNumber">-</div>
-</div>
-
-<div class="bingo-title">
-<div>B</div>
-<div>I</div>
-<div>N</div>
-<div>G</div>
-<div>O</div>
-</div>
-
-<div id="card" class="card"></div>
-
-<button id="callBtn">🎯 ቁጥር ማውጣት</button>
-
-<button id="bingoBtn">🏆 BINGO!</button>
-
-<button id="inviteBtn">👥 ጓደኛ ጋብዝ</button>
-
-<div id="status">Firebase እየተገናኘ ነው...</div>
-
+  <div id="status">Connecting...</div>
 </div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
 <script type="module">
-
-import {initializeApp}
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-getDatabase,
-ref,
-get,
-set,
-update
-}
-from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAuth, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getDatabase, ref, get, onValue, off } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-functions.js";
 
 const firebaseConfig = {
-apiKey:"AIzaSyBDO1Zorz2jicim-u5g9MN-COe_pVCpVYI",
-authDomain:"world-bingo-2.firebaseapp.com",
-databaseURL:"https://world-bingo-2-default-rtdb.firebaseio.com",
-projectId:"world-bingo-2",
-storageBucket:"world-bingo-2.firebasestorage.app",
-messagingSenderId:"671762364377",
-appId:"1:671762364377:web:0408268bb13428a04bcbc8",
-measurementId:"G-B1WXVZ4JBE"
+  apiKey: "AIzaSyBDO1Zorz2jicim-u5g9MN-COe_pVCpVYI",
+  authDomain: "world-bingo-2.firebaseapp.com",
+  databaseURL: "https://world-bingo-2-default-rtdb.firebaseio.com",
+  projectId: "world-bingo-2",
+  storageBucket: "world-bingo-2.firebasestorage.app",
+  messagingSenderId: "671762364377",
+  appId: "1:671762364377:web:0408268bb13428a04bcbc8",
+  measurementId: "G-B1WXVZ4JBE",
 };
 
-const app=initializeApp(firebaseConfig);
-const db=getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
+const functions = getFunctions(app);
 
-const tg=window.Telegram.WebApp;
+const verifyTelegramLogin = httpsCallable(functions, "verifyTelegramLogin");
+const joinRoom = httpsCallable(functions, "joinRoom");
+const claimBingo = httpsCallable(functions, "claimBingo");
+
+const tg = window.Telegram.WebApp;
 tg.expand();
 
-const telegramUser=tg.initDataUnsafe?.user||null;
-const userId=telegramUser?.id||"demo_user";
+const statusEl = document.getElementById("status");
+const balanceEl = document.getElementById("balance");
+const roomLabelEl = document.getElementById("roomLabel");
+const playersEl = document.getElementById("players");
 
-let balance=100;
-let referrals=0;
-let cards=1;
+let currentUid = null;
+let currentRoomId = null;
+let currentCard = null;
+let currentCalled = new Set();
+let roomListenerRef = null;
 
-let currentNumber=null;
-let calledNumbers=new Set();
+function setStatus(text) { statusEl.textContent = text; }
 
-let bingoCard=[];
-let marked=new Set();
-
-
-function randomNumbers(min,max,count){
-
-let numbers=[];
-
-while(numbers.length<count){
-
-let n=Math.floor(Math.random()*(max-min+1))+min;
-
-if(!numbers.includes(n)){
-numbers.push(n);
+async function login() {
+  if (!tg.initData) {
+    setStatus("⚠️ Open this from Telegram (no initData found).");
+    return;
+  }
+  setStatus("Verifying Telegram login...");
+  const { data } = await verifyTelegramLogin({ initData: tg.initData });
+  const cred = await signInWithCustomToken(auth, data.customToken);
+  currentUid = cred.user.uid;
+  setStatus("✅ Connected");
+  listenBalance();
 }
 
+function listenBalance() {
+  const balRef = ref(db, `users/${currentUid}/balance`);
+  onValue(balRef, (snap) => {
+    balanceEl.textContent = (snap.val() ?? 0) + " ETB";
+  });
 }
 
-return numbers;
+function showScreen(id) {
+  for (const s of ["stakeScreen", "cartelaScreen", "gameScreen"]) {
+    document.getElementById(s).classList.toggle("hidden", s !== id);
+  }
 }
 
-
-function createCard(){
-
-const B=randomNumbers(1,15,5);
-const I=randomNumbers(16,30,5);
-const N=randomNumbers(31,45,5);
-const G=randomNumbers(46,60,5);
-const O=randomNumbers(61,75,5);
-
-bingoCard=[];
-
-for(let r=0;r<5;r++){
-
-bingoCard.push([
-B[r],
-I[r],
-N[r],
-G[r],
-O[r]
-]);
-
-}
-
-bingoCard[2][2]="FREE";
-marked.add("2-2");
-
-renderCard();
-
-}
-
-
-function renderCard(){
-
-const card=document.getElementById("card");
-
-card.innerHTML="";
-
-for(let r=0;r<5;r++){
-
-for(let c=0;c<5;c++){
-
-const cell=document.createElement("div");
-
-cell.className="cell";
-
-const value=bingoCard[r][c];
-
-cell.textContent=value;
-
-cell.dataset.row=r;
-cell.dataset.col=c;
-
-if(value==="FREE"){
-
-cell.classList.add("free");
-cell.classList.add("marked");
-
-}else{
-
-cell.onclick=()=>{
-
-const key=r+"-"+c;
-
-if(calledNumbers.has(Number(value))){
-
-marked.add(key);
-cell.classList.add("marked");
-
-}
-
-};
-
-}
-
-if(marked.has(r+"-"+c)){
-
-cell.classList.add("marked");
-
-}
-
-card.appendChild(cell);
-
-}
-
-}
-
-}
-
-
-async function loadUser(){
-
-try{
-
-const userRef=ref(db,"users/"+userId);
-const snapshot=await get(userRef);
-
-if(snapshot.exists()){
-
-const data=snapshot.val();
-
-balance=data.balance??100;
-referrals=data.referrals??0;
-cards=data.cards??1;
-
-}else{
-
-await set(userRef,{
-balance:100,
-referrals:0,
-cards:1,
-name:telegramUser?.first_name||"Player",
-createdAt:Date.now()
+document.querySelectorAll(".stake-btn").forEach((btn) => {
+  btn.addEventListener("click", () => openCartelaPicker(Number(btn.dataset.stake)));
 });
 
+async function openCartelaPicker(stake) {
+  const roomId = `stake_${stake}_open`;
+  const snap = await get(ref(db, `rooms/${roomId}/taken`));
+  const taken = snap.exists() ? snap.val() : {};
+
+  const grid = document.getElementById("cartelaGrid");
+  grid.innerHTML = "";
+  for (let n = 1; n <= 100; n++) {
+    const b = document.createElement("button");
+    b.className = "cartela-cell";
+    b.textContent = n;
+    if (taken[n]) b.disabled = true;
+    b.onclick = () => pickCartela(stake, n);
+    grid.appendChild(b);
+  }
+  showScreen("cartelaScreen");
 }
 
-updateDisplay();
-
-document.getElementById("status").textContent=
-"✅ Firebase connected";
-
-}catch(error){
-
-console.error(error);
-
-document.getElementById("status").textContent=
-"⚠️ Firebase connection error";
-
+async function pickCartela(stake, cartelaNumber) {
+  setStatus("Joining room...");
+  try {
+    const { data } = await joinRoom({ stake, cartelaNumber });
+    currentRoomId = data.roomId;
+    currentCard = data.yourCard;
+    playersEl.textContent = data.playerCount;
+    roomLabelEl.textContent = currentRoomId;
+    renderCard();
+    listenRoom(currentRoomId);
+    showScreen("gameScreen");
+    setStatus("Waiting for game to start...");
+  } catch (e) {
+    setStatus("⚠️ " + (e.message || "Could not join room"));
+  }
 }
 
+function renderCard() {
+  const cardEl = document.getElementById("card");
+  cardEl.innerHTML = "";
+  const cols = ["B", "I", "N", "G", "O"];
+  for (let r = 0; r < 5; r++) {
+    for (const col of cols) {
+      const val = currentCard[col][r];
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.textContent = val;
+      if (val === "FREE") {
+        cell.classList.add("free", "marked");
+      } else if (currentCalled.has(Number(val))) {
+        cell.classList.add("marked");
+      }
+      cardEl.appendChild(cell);
+    }
+  }
 }
 
+function listenRoom(roomId) {
+  if (roomListenerRef) off(roomListenerRef);
+  roomListenerRef = ref(db, `rooms/${roomId}`);
+  onValue(roomListenerRef, (snap) => {
+    const room = snap.val();
+    if (!room) return;
+    currentCalled = new Set(Object.keys(room.calledNumbers || {}).map(Number));
+    document.getElementById("currentNumber").textContent = room.lastCalled ?? "-";
+    playersEl.textContent = Object.keys(room.players || {}).length;
+    renderCard();
 
-async function loadGame(){
-
-try{
-
-const gameRef=ref(db,"games/current");
-const snapshot=await get(gameRef);
-
-if(snapshot.exists()){
-
-const data=snapshot.val();
-
-currentNumber=data.currentNumber??null;
-
-const numbers=data.calledNumbers??{};
-
-calledNumbers=new Set(
-Object.keys(numbers).map(Number)
-);
-
+    if (room.state === "finished") {
+      if (room.winner === currentUid) {
+        setStatus(`🏆 You won ${room.prize ?? ""} ETB!`);
+      } else if (room.winner) {
+        setStatus("Someone else won this round.");
+      } else {
+        setStatus("Round ended.");
+      }
+    } else if (room.state === "running") {
+      setStatus("Game in progress...");
+    }
+  });
 }
 
-updateBoard();
-updateDisplay();
-
-}catch(error){
-
-console.error(error);
-
-}
-
-}
-
-
-async function callNextNumber(){
-
-if(calledNumbers.size>=75){
-
-alert("ሁሉም 75 ቁጥሮች ወጥተዋል!");
-return;
-
-}
-
-let number;
-
-do{
-
-number=Math.floor(Math.random()*75)+1;
-
-}while(calledNumbers.has(number));
-
-currentNumber=number;
-calledNumbers.add(number);
-
-const calledObject={};
-
-calledNumbers.forEach(n=>{
-calledObject[n]=true;
+document.getElementById("bingoBtn").addEventListener("click", async () => {
+  if (!currentRoomId) return;
+  setStatus("Checking your card...");
+  try {
+    const { data } = await claimBingo({ roomId: currentRoomId });
+    setStatus(`🎉 BINGO confirmed! You won ${data.prize} ETB.`);
+  } catch (e) {
+    setStatus("Not a BINGO yet: " + (e.message || ""));
+  }
 });
 
-try{
-
-await update(
-ref(db,"games/current"),
-{
-currentNumber:currentNumber,
-calledNumbers:calledObject,
-lastUpdated:Date.now()
-}
-);
-
-updateBoard();
-updateDisplay();
-renderCard();
-
-}catch(error){
-
-console.error(error);
-
-alert("ቁጥሩን ማስቀመጥ አልተቻለም");
-
-}
-
-}
-
-
-function updateBoard(){
-
-document.querySelectorAll(".cell").forEach(cell=>{
-
-const value=Number(cell.textContent);
-
-if(calledNumbers.has(value)){
-
-cell.style.outline="2px solid #facc15";
-
-}else{
-
-cell.style.outline="none";
-
-}
-
-});
-
-}
-
-
-function checkBingo(){
-
-let win=false;
-
-for(let r=0;r<5;r++){
-
-let complete=true;
-
-for(let c=0;c<5;c++){
-
-if(!marked.has(r+"-"+c)){
-
-complete=false;
-
-}
-
-}
-
-if(complete) win=true;
-
-}
-
-for(let c=0;c<5;c++){
-
-let complete=true;
-
-for(let r=0;r<5;r++){
-
-if(!marked.has(r+"-"+c)){
-
-complete=false;
-
-}
-
-}
-
-if(complete) win=true;
-
-}
-
-let diagonal1=true;
-let diagonal2=true;
-
-for(let i=0;i<5;i++){
-
-if(!marked.has(i+"-"+i)){
-
-diagonal1=false;
-
-}
-
-if(!marked.has(i+"-"+(4-i))){
-
-diagonal2=false;
-
-}
-
-}
-
-if(diagonal1||diagonal2){
-
-win=true;
-
-}
-
-if(win){
-
-alert("🏆 BINGO! 🎉");
-
-}else{
-
-alert("እስካሁን Bingo አልሞላም።");
-
-}
-
-}
-
-
-function updateDisplay(){
-
-document.getElementById("balance").textContent=
-balance+" ETB";
-
-document.getElementById("cards").textContent=
-cards;
-
-document.getElementById("referrals").textContent=
-referrals;
-
-document.getElementById("currentNumber").textContent=
-currentNumber??"-";
-
-}
-
-
-function inviteFriend(){
-
-const inviteLink=
-"https://t.me/Ethio_Exam_Prep_Bot?start=invite_"+userId;
-
-const shareUrl=
-"https://t.me/share/url?url="+
-encodeURIComponent(inviteLink)+
-"&text="+
-encodeURIComponent("🎱 Beteseb Bingo ላይ አብረን እንጫወት!");
-
-tg.openTelegramLink(shareUrl);
-
-}
-
-
-document.getElementById("callBtn")
-.addEventListener("click",callNextNumber);
-
-document.getElementById("bingoBtn")
-.addEventListener("click",checkBingo);
-
-document.getElementById("inviteBtn")
-.addEventListener("click",inviteFriend);
-
-
-createCard();
-loadUser();
-loadGame();
-
+login();
 </script>
-
 </body>
 </html>
