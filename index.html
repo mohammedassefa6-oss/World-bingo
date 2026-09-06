@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="am">
 <head>
 <meta charset="UTF-8">
@@ -43,7 +43,6 @@ button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;font-
     <div class="box">👥 Players<strong id="players">-</strong></div>
   </div>
 
-  <!-- Screen 1: choose stake -->
   <div id="stakeScreen" class="stake-grid">
     <button class="stake-btn" data-stake="10">Play 10</button>
     <button class="stake-btn" data-stake="20">Play 20</button>
@@ -51,13 +50,11 @@ button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;font-
     <button class="stake-btn" data-stake="100">Play 100</button>
   </div>
 
-  <!-- Screen 2: choose cartela -->
   <div id="cartelaScreen" class="hidden">
     <div>Pick your cartela number:</div>
     <div id="cartelaGrid" class="cartela-grid"></div>
   </div>
 
-  <!-- Screen 3: live game -->
   <div id="gameScreen" class="hidden">
     <div class="current">
       <div>የተጠራው ቁጥር</div>
@@ -72,6 +69,11 @@ button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;font-
 </div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+window.addEventListener('error', function(e) {
+  document.getElementById('status').textContent = '❌ JS Error: ' + e.message;
+});
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAuth, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
@@ -88,8 +90,6 @@ const firebaseConfig = {
   measurementId: "G-B1WXVZ4JBE",
 };
 
-// ⚠️ After you deploy the server (index.js) to Render, replace this with
-// your Render URL, e.g. "https://world-bingo-server.onrender.com"
 const SERVER_URL = "https://world-bingo-server.onrender.com";
 
 const app = initializeApp(firebaseConfig);
@@ -127,7 +127,6 @@ let roomListenerRef = null;
 
 function setStatus(text) { statusEl.textContent = text; }
 
-// ---------- Login ----------
 async function login() {
   if (!tg.initData) {
     setStatus("⚠️ Open this from Telegram (no initData found).");
@@ -148,14 +147,12 @@ function listenBalance() {
   });
 }
 
-// ---------- Screen switching ----------
 function showScreen(id) {
   for (const s of ["stakeScreen", "cartelaScreen", "gameScreen"]) {
     document.getElementById(s).classList.toggle("hidden", s !== id);
   }
 }
 
-// ---------- Stake -> cartela ----------
 document.querySelectorAll(".stake-btn").forEach((btn) => {
   btn.addEventListener("click", () => openCartelaPicker(Number(btn.dataset.stake)));
 });
@@ -195,7 +192,6 @@ async function pickCartela(stake, cartelaNumber) {
   }
 }
 
-// ---------- Card rendering ----------
 function renderCard() {
   const cardEl = document.getElementById("card");
   cardEl.innerHTML = "";
@@ -216,7 +212,6 @@ function renderCard() {
   }
 }
 
-// ---------- Live room state (read-only) ----------
 function listenRoom(roomId) {
   if (roomListenerRef) off(roomListenerRef);
   roomListenerRef = ref(db, `rooms/${roomId}`);
@@ -242,7 +237,6 @@ function listenRoom(roomId) {
   });
 }
 
-// ---------- Claim BINGO (server verifies, not the client) ----------
 document.getElementById("bingoBtn").addEventListener("click", async () => {
   if (!currentRoomId) return;
   setStatus("Checking your card...");
@@ -253,8 +247,11 @@ document.getElementById("bingoBtn").addEventListener("click", async () => {
     setStatus("Not a BINGO yet: " + (e.message || ""));
   }
 });
+
 login().catch((e) => {
-  setStatus("❌ Error: " + e.message);
+  setStatus("❌ Login error: " + e.message);
   console.error(e);
 });
-
+</script>
+</body>
+</html>
