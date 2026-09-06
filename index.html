@@ -38,6 +38,7 @@ h1{color:#facc15;margin:8px 0 2px;font-size:26px}
 .nav-item .ic{font-size:19px;display:block;margin-bottom:2px}
 
 /* ---------- Cartela screen ---------- */
+#cartelaStatus{color:#facc15;margin:10px 0;min-height:18px;font-size:14px}
 .cartela-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-top:14px}
 .cartela-cell{padding:8px 0;border-radius:6px;background:#334155;font-size:13px;font-weight:bold;cursor:pointer;border:none;color:white}
 .cartela-cell:disabled{background:#1e293b;color:#475569;cursor:not-allowed}
@@ -105,6 +106,7 @@ h1{color:#facc15;margin:8px 0 2px;font-size:26px}
   <!-- Screen 2: choose cartela -->
   <div id="cartelaScreen" class="hidden">
     <div>Pick your cartela number:</div>
+    <div id="cartelaStatus"></div>
     <div id="cartelaGrid" class="cartela-grid"></div>
   </div>
 
@@ -260,24 +262,32 @@ document.querySelectorAll(".stake-btn").forEach((btn) => {
 async function openCartelaPicker(stake) {
   currentStake = stake;
   const roomId = `stake_${stake}_open`;
-  const snap = await get(ref(db, `rooms/${roomId}/taken`));
-  const taken = snap.exists() ? snap.val() : {};
+  const cs = document.getElementById("cartelaStatus");
+  cs.textContent = "";
+  try {
+    const snap = await get(ref(db, `rooms/${roomId}/taken`));
+    const taken = snap.exists() ? snap.val() : {};
 
-  const grid = document.getElementById("cartelaGrid");
-  grid.innerHTML = "";
-  for (let n = 1; n <= 100; n++) {
-    const b = document.createElement("button");
-    b.className = "cartela-cell";
-    b.textContent = n;
-    if (taken[n]) b.disabled = true;
-    b.onclick = () => pickCartela(stake, n);
-    grid.appendChild(b);
+    const grid = document.getElementById("cartelaGrid");
+    grid.innerHTML = "";
+    for (let n = 1; n <= 100; n++) {
+      const b = document.createElement("button");
+      b.className = "cartela-cell";
+      b.textContent = n;
+      if (taken[n]) b.disabled = true;
+      b.onclick = () => pickCartela(stake, n);
+      grid.appendChild(b);
+    }
+    showScreen("cartelaScreen");
+  } catch (e) {
+    cs.textContent = "⚠️ " + (e.message || "Could not load room");
+    showScreen("cartelaScreen");
   }
-  showScreen("cartelaScreen");
 }
 
 async function pickCartela(stake, cartelaNumber) {
-  setStatus("Joining room...");
+  const cs = document.getElementById("cartelaStatus");
+  cs.textContent = "Joining room...";
   try {
     const data = await callServer("/join-room", { stake, cartelaNumber });
     currentRoomId = data.roomId;
@@ -290,8 +300,9 @@ async function pickCartela(stake, cartelaNumber) {
     listenRoom(currentRoomId);
     showScreen("gameScreen");
     setStatus("Waiting for game to start...");
+    cs.textContent = "";
   } catch (e) {
-    setStatus("⚠️ " + (e.message || "Could not join room"));
+    cs.textContent = "⚠️ " + (e.message || "Could not join room");
   }
 }
 
