@@ -253,8 +253,8 @@ document.getElementById("bingoBtn").addEventListener("click", async () => {
     setStatus("Not a BINGO yet: " + (e.message || ""));
   }
 });
+login().catch((e) => {
+  setStatus("❌ Error: " + e.message);
+  console.error(e);
+});
 
-login();
-</script>
-</body>
-</html>
