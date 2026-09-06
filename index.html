@@ -73,6 +73,9 @@ button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;font-
 window.addEventListener('error', function(e) {
   document.getElementById('status').textContent = '❌ JS Error: ' + e.message;
 });
+ window.addEventListener('unhandledrejection', function(e) {
+  document.getElementById('status').textContent = '❌ Error: ' + (e.reason?.message || e.reason);
+});
 </script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
