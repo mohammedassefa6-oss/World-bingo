@@ -1,38 +1,79 @@
- <!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="am">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Beteseb Bingo</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#101827;color:white;text-align:center}
-.container{max-width:500px;margin:auto;padding:18px}
-h1{color:#4ade80;margin:5px 0}
-.subtitle{color:#cbd5e1;margin-bottom:18px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(160deg,#0f0c29,#1a1440 40%,#241b5e);color:white;text-align:center;min-height:100vh}
+.container{max-width:520px;margin:auto;padding:14px 14px 90px}
+h1{color:#facc15;margin:8px 0 2px;font-size:26px}
+.subtitle{color:#cbd5e1;margin-bottom:14px;font-size:13px}
+.rules-btn{position:fixed;top:12px;right:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;z-index:5}
+
+/* ---------- Welcome / stake screen ---------- */
+.welcome-title{font-size:22px;font-weight:bold;margin:18px 0 16px}
+.welcome-title b{color:#facc15}
+.stake-panel{border:1px solid #fbbf2455;border-radius:16px;padding:16px;background:rgba(255,255,255,.03);margin-bottom:16px}
+.stake-panel-title{color:#facc15;font-weight:bold;margin-bottom:12px;font-size:15px}
+.stake-grid{display:flex;flex-direction:column;gap:10px}
+.stake-btn{border:0;border-radius:12px;padding:15px;font-size:17px;font-weight:bold;cursor:pointer;color:#04121a;background:linear-gradient(90deg,#22d3a5,#2563eb)}
+.stake-btn:nth-child(2){background:linear-gradient(90deg,#38bdf8,#6366f1)}
+.stake-btn:nth-child(3){background:linear-gradient(90deg,#facc15,#f97316)}
+.stake-btn:nth-child(4){background:linear-gradient(90deg,#f472b6,#a855f7)}
+.stat-card{background:rgba(255,255,255,.05);border-radius:14px;padding:16px;margin-bottom:10px}
+.stat-card b{display:block;font-size:24px;color:#4ade80}
+
+/* ---------- Top info boxes (shared) ---------- */
 .info{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:15px}
-.box{background:#1e293b;padding:10px 3px;border-radius:10px;font-size:13px}
-.box strong{display:block;font-size:17px;color:#4ade80;margin-top:5px}
-.current{background:#1e293b;padding:12px;border-radius:12px;margin-bottom:14px}
-#currentNumber{font-size:40px;font-weight:bold;color:#facc15;margin-top:5px}
-.bingo-title{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:5px}
-.bingo-title div{font-size:22px;font-weight:bold;color:#4ade80}
-.card{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
-.cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#334155;border-radius:8px;font-size:17px;font-weight:bold}
-.cell.marked{background:#16a34a;color:white}
-.free{background:#2563eb;font-size:13px}
-.stake-grid{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.box{background:rgba(255,255,255,.06);padding:10px 3px;border-radius:10px;font-size:12px}
+.box strong{display:block;font-size:16px;color:#4ade80;margin-top:4px}
+
+/* ---------- Bottom nav ---------- */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:#150f38;border-top:1px solid rgba(255,255,255,.08);display:flex;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:5}
+.nav-item{flex:1;text-align:center;color:#8b87b0;font-size:11px;cursor:pointer}
+.nav-item.active{color:#facc15}
+.nav-item .ic{font-size:19px;display:block;margin-bottom:2px}
+
+/* ---------- Cartela screen ---------- */
 .cartela-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-top:14px}
 .cartela-cell{padding:8px 0;border-radius:6px;background:#334155;font-size:13px;font-weight:bold;cursor:pointer;border:none;color:white}
 .cartela-cell:disabled{background:#1e293b;color:#475569;cursor:not-allowed}
-button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;font-size:17px;font-weight:bold;cursor:pointer}
-.stake-btn{background:#22c55e;color:#052e16}
-#bingoBtn{background:#facc15;color:#422006}
-#status{margin-top:14px;color:#94a3b8;font-size:14px}
+
+/* ---------- Game screen ---------- */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:10px}
+.stat-box{background:rgba(255,255,255,.06);border-radius:10px;padding:6px 2px;font-size:10px;color:#a5b4d8}
+.stat-box b{display:block;font-size:15px;color:#fff;margin-top:2px}
+.recent-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+.recent-ball{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:#fff}
+.current-ball-wrap{background:rgba(255,255,255,.05);border-radius:16px;padding:16px;margin-bottom:10px}
+#currentBall{width:100px;height:100px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold;border:4px solid #facc15;background:radial-gradient(circle at 35% 30%,#3b3070,#1a1440);color:#fff;box-shadow:0 0 25px #facc1555}
+.auto-row{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.05);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:14px}
+.switch{width:42px;height:24px;border-radius:12px;background:#4ade80;position:relative;display:inline-block}
+.switch::after{content:"";position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff}
+.board{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:rgba(255,255,255,.04);border-radius:14px;padding:10px;margin-bottom:12px}
+.board-head{font-weight:bold;font-size:15px;padding:4px 0;border-radius:6px;color:#fff}
+.bh-B{background:#2563eb}.bh-I{background:#7c3aed}.bh-N{background:#9333ea}.bh-G{background:#16a34a}.bh-O{background:#ea580c}
+.board-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);border-radius:6px;font-size:12px;font-weight:bold;color:#cbd5e1}
+.board-cell.called{background:#4ade80;color:#04210f}
+.board-cell.mine{outline:2px solid #facc15}
+.board-cell.last{background:#facc15;color:#422006;transform:scale(1.08)}
+#status{margin:10px 0;color:#c7d2fe;font-size:14px;min-height:18px}
+.watch-note{background:rgba(255,255,255,.04);border-radius:12px;padding:14px;font-size:13px;color:#c9c6e6;line-height:1.6;margin-bottom:12px}
+.action-row{display:flex;gap:8px;margin-bottom:10px}
+.action-row button{flex:1;border:0;border-radius:10px;padding:13px;font-weight:bold;font-size:14px}
+.leave-btn{background:linear-gradient(90deg,#f87171,#ef4444);color:#fff}
+.refresh-btn{background:rgba(255,255,255,.1);color:#fff}
+.auto-btn{background:linear-gradient(90deg,#facc15,#f59e0b);color:#422006}
+#bingoBtn{width:100%;border:0;border-radius:12px;padding:16px;font-size:18px;font-weight:bold;background:linear-gradient(90deg,#facc15,#f97316);color:#422006;margin-top:4px}
 .hidden{display:none}
 </style>
 </head>
 <body>
+<button class="rules-btn" onclick="alert('Choose a stake, pick your cartela number, and wait for the board to fill your numbers. First to complete a line wins!')">❓ Rules</button>
+
 <div class="container">
   <h1>🎱 Beteseb Bingo</h1>
   <div class="subtitle">Telegram Bingo Web App</div>
@@ -43,29 +84,72 @@ button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;font-
     <div class="box">👥 Players<strong id="players">-</strong></div>
   </div>
 
-  <div id="stakeScreen" class="stake-grid">
-    <button class="stake-btn" data-stake="10">Play 10</button>
-    <button class="stake-btn" data-stake="20">Play 20</button>
-    <button class="stake-btn" data-stake="50">Play 50</button>
-    <button class="stake-btn" data-stake="100">Play 100</button>
+  <!-- Screen 1: Welcome / stake -->
+  <div id="stakeScreen">
+    <div class="welcome-title">Welcome to <b>Beteseb Bingo</b></div>
+    <div class="stake-panel">
+      <div class="stake-panel-title">▷ Choose Your Stake</div>
+      <div class="stake-grid">
+        <button class="stake-btn" data-stake="10">▷ Play 10</button>
+        <button class="stake-btn" data-stake="20">▷ Play 20</button>
+        <button class="stake-btn" data-stake="50">▷ Play 50</button>
+        <button class="stake-btn" data-stake="100">▷ Play 100</button>
+      </div>
+    </div>
+    <div class="stat-card">
+      <b id="activePlayers">-</b>
+      Active Players
+    </div>
   </div>
 
+  <!-- Screen 2: choose cartela -->
   <div id="cartelaScreen" class="hidden">
     <div>Pick your cartela number:</div>
     <div id="cartelaGrid" class="cartela-grid"></div>
   </div>
 
+  <!-- Screen 3: live game -->
   <div id="gameScreen" class="hidden">
-    <div class="current">
-      <div>የተጠራው ቁጥር</div>
-      <div id="currentNumber">-</div>
+    <div class="stat-row">
+      <div class="stat-box">Game ID<b id="gameIdStat">-</b></div>
+      <div class="stat-box">Players<b id="playersStat">-</b></div>
+      <div class="stat-box">Bet<b id="betStat">-</b></div>
+      <div class="stat-box">Derash<b id="derashStat">-</b></div>
+      <div class="stat-box">Called<b id="calledStat">0</b></div>
     </div>
-    <div class="bingo-title"><div>B</div><div>I</div><div>N</div><div>G</div><div>O</div></div>
-    <div id="card" class="card"></div>
+
+    <div class="recent-row" id="recentRow"></div>
+
+    <div class="current-ball-wrap">
+      <div id="currentBall">-</div>
+    </div>
+
+    <div class="auto-row">
+      <span>Automatic</span>
+      <span class="switch"></span>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div id="status">Connecting...</div>
+
+    <div class="watch-note">
+      የዚህ ዙር ካርድ ተጠፋ። አዲስ ዙር እስኪጀምር ይጠብቁ።
+    </div>
+
+    <div class="action-row">
+      <button class="leave-btn" id="leaveBtn">Leave</button>
+      <button class="refresh-btn" onclick="location.reload()">Refresh</button>
+    </div>
     <button id="bingoBtn">🏆 BINGO!</button>
   </div>
+</div>
 
-  <div id="status">Connecting...</div>
+<div class="bottom-nav">
+  <div class="nav-item active"><span class="ic">🎮</span>Game</div>
+  <div class="nav-item" onclick="alert('Coming soon')"><span class="ic">🕓</span>History</div>
+  <div class="nav-item" onclick="alert('Coming soon')"><span class="ic">💼</span>Wallet</div>
+  <div class="nav-item" onclick="alert('Coming soon')"><span class="ic">👤</span>Profile</div>
 </div>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -73,7 +157,7 @@ button{width:100%;border:0;border-radius:10px;padding:14px;margin-top:14px;font-
 window.addEventListener('error', function(e) {
   document.getElementById('status').textContent = '❌ JS Error: ' + e.message;
 });
- window.addEventListener('unhandledrejection', function(e) {
+window.addEventListener('unhandledrejection', function(e) {
   document.getElementById('status').textContent = '❌ Error: ' + (e.reason?.message || e.reason);
 });
 </script>
@@ -94,6 +178,8 @@ const firebaseConfig = {
 };
 
 const SERVER_URL = "https://world-bingo-server.onrender.com";
+const HOUSE_CUT = 0.2;
+const COL_COLORS = { B: "#2563eb", I: "#7c3aed", N: "#9333ea", G: "#16a34a", O: "#ea580c" };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -125,6 +211,7 @@ const playersEl = document.getElementById("players");
 let currentUid = null;
 let currentRoomId = null;
 let currentCard = null;
+let currentStake = null;
 let currentCalled = new Set();
 let roomListenerRef = null;
 
@@ -141,12 +228,22 @@ async function login() {
   currentUid = cred.user.uid;
   setStatus("✅ Connected");
   listenBalance();
+  listenActivePlayers();
 }
 
 function listenBalance() {
   const balRef = ref(db, `users/${currentUid}/balance`);
   onValue(balRef, (snap) => {
     balanceEl.textContent = (snap.val() ?? 0) + " ETB";
+  });
+}
+
+function listenActivePlayers() {
+  onValue(ref(db, "rooms"), (snap) => {
+    const rooms = snap.val() || {};
+    let total = 0;
+    for (const r of Object.values(rooms)) total += Object.keys(r.players || {}).length;
+    document.getElementById("activePlayers").textContent = total;
   });
 }
 
@@ -161,6 +258,7 @@ document.querySelectorAll(".stake-btn").forEach((btn) => {
 });
 
 async function openCartelaPicker(stake) {
+  currentStake = stake;
   const roomId = `stake_${stake}_open`;
   const snap = await get(ref(db, `rooms/${roomId}/taken`));
   const taken = snap.exists() ? snap.val() : {};
@@ -186,7 +284,9 @@ async function pickCartela(stake, cartelaNumber) {
     currentCard = data.yourCard;
     playersEl.textContent = data.playerCount;
     roomLabelEl.textContent = currentRoomId;
-    renderCard();
+    document.getElementById("gameIdStat").textContent = currentRoomId.replace("stake_", "").replace("_open", "");
+    document.getElementById("betStat").textContent = stake;
+    buildBoard();
     listenRoom(currentRoomId);
     showScreen("gameScreen");
     setStatus("Waiting for game to start...");
@@ -195,24 +295,69 @@ async function pickCartela(stake, cartelaNumber) {
   }
 }
 
-function renderCard() {
-  const cardEl = document.getElementById("card");
-  cardEl.innerHTML = "";
-  const cols = ["B", "I", "N", "G", "O"];
-  for (let r = 0; r < 5; r++) {
-    for (const col of cols) {
-      const val = currentCard[col][r];
-      const cell = document.createElement("div");
-      cell.className = "cell";
-      cell.textContent = val;
-      if (val === "FREE") {
-        cell.classList.add("free", "marked");
-      } else if (currentCalled.has(Number(val))) {
-        cell.classList.add("marked");
-      }
-      cardEl.appendChild(cell);
+const myNumbers = new Set();
+function collectMyNumbers() {
+  myNumbers.clear();
+  if (!currentCard) return;
+  for (const col of ["B", "I", "N", "G", "O"]) {
+    for (const v of currentCard[col]) {
+      if (v !== "FREE") myNumbers.add(Number(v));
     }
   }
+}
+
+function buildBoard() {
+  collectMyNumbers();
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  const cols = { B: [1, 15], I: [16, 30], N: [31, 45], G: [46, 60], O: [61, 75] };
+  for (const col of Object.keys(cols)) {
+    const head = document.createElement("div");
+    head.className = "board-head bh-" + col;
+    head.textContent = col;
+    board.appendChild(head);
+  }
+  for (let row = 0; row < 15; row++) {
+    for (const col of Object.keys(cols)) {
+      const [low] = cols[col];
+      const n = low + row;
+      const cell = document.createElement("div");
+      cell.className = "board-cell";
+      cell.id = "num-" + n;
+      cell.textContent = n;
+      if (myNumbers.has(n)) cell.classList.add("mine");
+      board.appendChild(cell);
+    }
+  }
+}
+
+function renderCalled(room) {
+  currentCalled = new Set(Object.keys(room.calledNumbers || {}).map(Number));
+  document.querySelectorAll(".board-cell").forEach((c) => c.classList.remove("called", "last"));
+  currentCalled.forEach((n) => {
+    const el = document.getElementById("num-" + n);
+    if (el) el.classList.add("called");
+  });
+  if (room.lastCalled != null) {
+    const el = document.getElementById("num-" + room.lastCalled);
+    if (el) el.classList.add("last");
+    const col = "BINGO"[Math.floor((room.lastCalled - 1) / 15)];
+    document.getElementById("currentBall").style.borderColor = COL_COLORS[col];
+    document.getElementById("currentBall").textContent = col + "-" + room.lastCalled;
+  }
+  document.getElementById("calledStat").textContent = currentCalled.size;
+
+  const recentRow = document.getElementById("recentRow");
+  recentRow.innerHTML = "";
+  const recent = [...currentCalled].slice(-3).reverse();
+  recent.forEach((n) => {
+    const col = "BINGO"[Math.floor((n - 1) / 15)];
+    const ball = document.createElement("div");
+    ball.className = "recent-ball";
+    ball.style.background = COL_COLORS[col];
+    ball.textContent = col + "-" + n;
+    recentRow.appendChild(ball);
+  });
 }
 
 function listenRoom(roomId) {
@@ -221,10 +366,11 @@ function listenRoom(roomId) {
   onValue(roomListenerRef, (snap) => {
     const room = snap.val();
     if (!room) return;
-    currentCalled = new Set(Object.keys(room.calledNumbers || {}).map(Number));
-    document.getElementById("currentNumber").textContent = room.lastCalled ?? "-";
     playersEl.textContent = Object.keys(room.players || {}).length;
-    renderCard();
+    document.getElementById("playersStat").textContent = Object.keys(room.players || {}).length;
+    const derash = Math.floor(room.stake * Object.keys(room.players || {}).length * (1 - HOUSE_CUT));
+    document.getElementById("derashStat").textContent = derash;
+    renderCalled(room);
 
     if (room.state === "finished") {
       if (room.winner === currentUid) {
@@ -249,6 +395,13 @@ document.getElementById("bingoBtn").addEventListener("click", async () => {
   } catch (e) {
     setStatus("Not a BINGO yet: " + (e.message || ""));
   }
+});
+
+document.getElementById("leaveBtn").addEventListener("click", () => {
+  if (roomListenerRef) off(roomListenerRef);
+  currentRoomId = null;
+  showScreen("stakeScreen");
+  setStatus("");
 });
 
 login().catch((e) => {
