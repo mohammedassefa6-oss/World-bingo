@@ -12,6 +12,24 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const HOUSE_CUT = 0.2;
 const CALL_INTERVAL_MS = 3000;
 
+function toFiniteNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+function toPositiveInteger(value) {
+  const number = toFiniteNumber(value);
+  return number !== null && Number.isInteger(number) && number > 0 ? number : null;
+}
+
+async function getTelegramProfile(uid) {
+  if (typeof uid !== "string" || !/^tg_\d+$/.test(uid)) return null;
+  const snapshot = await db.ref(`users/${uid}`).once("value");
+  const profile = snapshot.val();
+  return profile && String(profile.telegramId) === uid.slice(3) ? profile : null;
+}
+
 exports.verifyTelegramLogin = onCall(async (request) => {
   const { initData } = request.data;
   if (!initData) throw new HttpsError("invalid-argument", "initData required");
@@ -19,6 +37,9 @@ exports.verifyTelegramLogin = onCall(async (request) => {
 
   const params = new URLSearchParams(initData);
   const hash = params.get("hash");
+  const authDateValue = params.get("auth_date");
+  const userValue = params.get("user");
+  if (!hash || !authDateValue || !userValue) throw new HttpsError("invalid-argument", "Invalid Telegram WebApp data");
   params.delete("hash");
 
   const dataCheckString = [...params.entries()]
@@ -29,17 +50,21 @@ exports.verifyTelegramLogin = onCall(async (request) => {
   const secretKey = crypto.createHmac("sha256", "WebAppData").update(TELEGRAM_BOT_TOKEN).digest();
   const computedHash = crypto.createHmac("sha256", secretKey).update(dataCheckString).digest("hex");
 
-  if (computedHash !== hash) {
+  const computedHashBuffer = Buffer.from(computedHash, "hex");
+  const providedHashBuffer = Buffer.from(hash, "hex");
+  if (providedHashBuffer.length !== computedHashBuffer.length || !crypto.timingSafeEqual(computedHashBuffer, providedHashBuffer)) {
     throw new HttpsError("permission-denied", "Invalid Telegram signature");
   }
 
-  const authDate = Number(params.get("auth_date") || 0);
+  const authDate = Number(authDateValue);
   const ageSeconds = Date.now() / 1000 - authDate;
-  if (ageSeconds > 300) {
+  if (!Number.isFinite(authDate) || ageSeconds > 300 || ageSeconds < -30) {
     throw new HttpsError("permission-denied", "initData expired, reopen the app");
   }
 
-  const user = JSON.parse(params.get("user"));
+  let user;
+  try { user = JSON.parse(userValue); } catch { throw new HttpsError("invalid-argument", "Invalid Telegram user data"); }
+  if (!user || !user.id) throw new HttpsError("invalid-argument", "Telegram user is required");
   const uid = `tg_${user.id}`;
 
   const userRef = db.ref(`users/${uid}`);
@@ -55,46 +80,55 @@ exports.verifyTelegramLogin = onCall(async (request) => {
     });
   }
 
+  const balanceSnapshot = await userRef.child("balance").once("value");
+  const balance = toFiniteNumber(balanceSnapshot.val());
   const customToken = await admin.auth().createCustomToken(uid);
-  return { customToken, uid };
+  return { customToken, uid, balance: balance === null ? 0 : balance };
 });
 
 exports.joinRoom = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in first");
+  if (!(await getTelegramProfile(uid))) throw new HttpsError("permission-denied", "Telegram user verification required");
 
   const { stake, cartelaNumber } = request.data;
-  if (!Number.isInteger(stake) || stake <= 0) throw new HttpsError("invalid-argument", "bad stake");
-  if (!Number.isInteger(cartelaNumber) || cartelaNumber < 1 || cartelaNumber > 100) {
-    throw new HttpsError("invalid-argument", "bad cartela number");
-  }
+  const parsedStake = toPositiveInteger(stake);
+  const parsedCartelaNumber = toPositiveInteger(cartelaNumber);
+  if (parsedStake === null) throw new HttpsError("invalid-argument", "Invalid room stake");
+  if (parsedCartelaNumber === null || parsedCartelaNumber > 100) throw new HttpsError("invalid-argument", "Invalid cartela number");
 
-  const roomId = `stake_${stake}_open`;
+  const roomId = `stake_${parsedStake}_open`;
   const roomRef = db.ref(`rooms/${roomId}`);
   const balanceRef = db.ref(`users/${uid}/balance`);
 
   const balanceResult = await balanceRef.transaction((current) => {
-    current = current || 0;
-    if (current < stake) return;
-    return current - stake;
+    const balance = toFiniteNumber(current);
+    if (balance === null || balance < parsedStake) return;
+    return balance - parsedStake;
   });
   if (!balanceResult.committed) {
-    throw new HttpsError("failed-precondition", "Insufficient balance");
+    const balance = toFiniteNumber(balanceResult.snapshot.val());
+    if (balance === null) throw new HttpsError("failed-precondition", "Balance unavailable. Please try again.");
+    throw new HttpsError("failed-precondition", `Insufficient balance. You have ${balance} ETB; ${parsedStake} ETB is required.`);
   }
 
   const joinResult = await roomRef.transaction((room) => {
-    room = room || { stake, state: "waiting", players: {}, taken: {} };
+    room = room || { stake: parsedStake, state: "waiting", players: {}, taken: {} };
     if (room.state !== "waiting") return;
-    if (room.taken && room.taken[cartelaNumber]) return;
+    if (Number(room.stake) !== parsedStake) return;
+    if (room.taken && room.taken[parsedCartelaNumber]) return;
     room.players = room.players || {};
     room.taken = room.taken || {};
-    room.players[uid] = { cartelaNumber, joinedAt: Date.now() };
-    room.taken[cartelaNumber] = true;
+    room.players[uid] = { cartelaNumber: parsedCartelaNumber, joinedAt: Date.now() };
+    room.taken[parsedCartelaNumber] = true;
     return room;
   });
 
   if (!joinResult.committed) {
-    await balanceRef.transaction((current) => (current || 0) + stake);
+    await balanceRef.transaction((current) => {
+      const balance = toFiniteNumber(current);
+      return (balance === null ? 0 : balance) + parsedStake;
+    });
     throw new HttpsError("failed-precondition", "Could not join room (cartela taken or room started)");
   }
 
@@ -107,7 +141,9 @@ exports.joinRoom = onCall(async (request) => {
     await roomRef.child("calledNumbers").set({});
   }
 
-  return { roomId, playerCount, yourCard: getCard(cartelaNumber) };
+  const balanceSnapshot = await balanceRef.once("value");
+  const balance = toFiniteNumber(balanceSnapshot.val());
+  return { roomId, playerCount, yourCard: getCard(parsedCartelaNumber), balance };
 });
 
 exports.advanceGames = onSchedule(
@@ -134,6 +170,7 @@ exports.advanceGames = onSchedule(
 exports.claimBingo = onCall(async (request) => {
   const uid = request.auth?.uid;
   if (!uid) throw new HttpsError("unauthenticated", "Sign in first");
+  if (!(await getTelegramProfile(uid))) throw new HttpsError("permission-denied", "Telegram user verification required");
 
   const { roomId } = request.data;
   const roomRef = db.ref(`rooms/${roomId}`);
