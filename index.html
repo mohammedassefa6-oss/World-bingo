@@ -437,3 +437,23 @@ login().catch((e) => {
 </script>
 </body>
 </html>
+async function login() {
+  if (!tg.initData) {
+    setStatus("⚠️ Open this from Telegram (no initData found).");
+    return;
+  }
+  setStatus("Verifying Telegram login...");
+  try {
+    const data = await callServer("/verify-telegram-login", { initData: tg.initData });
+    const cred = await signInWithCustomToken(auth, data.customToken);
+    currentUid = cred.user.uid;
+    if (currentUid !== data.uid) throw new Error("Telegram account verification failed");
+    setBalance(data.balance);
+    setStatus("✅ Connected");
+    listenBalance();
+    listenActivePlayers();
+  } catch (err) {
+    console.error("Login error details:", err);
+    setStatus("❌ Login failed: " + (err.message || err));
+  }
+}
