@@ -187,17 +187,15 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-async function callServer(path, body) {
+async function callServer(path, body, method = "POST") {
   const headers = { "Content-Type": "application/json" };
   if (auth.currentUser) {
     headers["Authorization"] = "Bearer " + (await auth.currentUser.getIdToken());
   }
-  const resp = await fetch(SERVER_URL + path, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body || {}),
-  });
-  const data = await resp.json();
+  const options = { method, headers };
+  if (method !== "GET") options.body = JSON.stringify(body || {});
+  const resp = await fetch(SERVER_URL + path, options);
+  const data = await resp.json().catch(() => ({}));
   if (!resp.ok) throw new Error(data.error || "Request failed");
   return data;
 }
@@ -216,6 +214,12 @@ let currentCard = null;
 let currentStake = null;
 let currentCalled = new Set();
 let roomListenerRef = null;
+let balancePoller = null;
+
+function setBalance(value) {
+  const balance = Number(value);
+  balanceEl.textContent = Number.isFinite(balance) ? balance + " ETB" : "Unavailable";
+}
 
 function setStatus(text) { statusEl.textContent = text; }
 
@@ -228,16 +232,20 @@ async function login() {
   const data = await callServer("/verify-telegram-login", { initData: tg.initData });
   const cred = await signInWithCustomToken(auth, data.customToken);
   currentUid = cred.user.uid;
+  if (currentUid !== data.uid) throw new Error("Telegram account verification failed");
+  setBalance(data.balance);
   setStatus("✅ Connected");
   listenBalance();
   listenActivePlayers();
 }
 
 function listenBalance() {
-  const balRef = ref(db, `users/${currentUid}/balance`);
-  onValue(balRef, (snap) => {
-    balanceEl.textContent = (snap.val() ?? 0) + " ETB";
-  });
+  if (balancePoller) clearInterval(balancePoller);
+  const refresh = () => callServer("/balance", null, "GET")
+    .then((data) => setBalance(data.balance))
+    .catch((e) => console.error("Balance refresh failed:", e));
+  refresh();
+  balancePoller = setInterval(refresh, 5000);
 }
 
 function listenActivePlayers() {
@@ -289,7 +297,13 @@ async function pickCartela(stake, cartelaNumber) {
   const cs = document.getElementById("cartelaStatus");
   cs.textContent = "Joining room...";
   try {
-    const data = await callServer("/join-room", { stake, cartelaNumber });
+    const normalizedStake = Number(stake);
+    const normalizedCartelaNumber = Number(cartelaNumber);
+    const data = await callServer("/join-room", {
+      stake: normalizedStake,
+      cartelaNumber: normalizedCartelaNumber,
+    });
+    if (data.balance !== undefined) setBalance(data.balance);
     currentRoomId = data.roomId;
     currentCard = data.yourCard;
     playersEl.textContent = data.playerCount;
@@ -403,6 +417,7 @@ document.getElementById("bingoBtn").addEventListener("click", async () => {
   try {
     const data = await callServer("/claim-bingo", { roomId: currentRoomId });
     setStatus(`🎉 BINGO confirmed! You won ${data.prize} ETB.`);
+    await callServer("/balance", null, "GET").then((balance) => setBalance(balance.balance));
   } catch (e) {
     setStatus("Not a BINGO yet: " + (e.message || ""));
   }
