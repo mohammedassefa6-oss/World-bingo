@@ -1,67 +1,54 @@
-const COLUMN_RANGES = {
-  B: [1, 15],
-  I: [16, 30],
-  N: [31, 45],
-  G: [46, 60],
-  O: [61, 75],
-};
 
-function mulberry32(seed) {
-  return function () {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+const https = require("https");
+
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+
+function callTelegramApi(method, payload) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(payload);
+    const options = {
+      hostname: "api.telegram.org",
+      path: `/bot${TELEGRAM_BOT_TOKEN}/${method}`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(data),
+      },
+    };
+    const req = https.request(options, (res) => {
+      let body = "";
+      res.on("data", (chunk) => (body += chunk));
+      res.on("end", () => resolve(JSON.parse(body)));
+    });
+    req.on("error", reject);
+    req.write(data);
+    req.end();
+  });
 }
 
-function shuffle(arr, rng) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
+function sendMessage(chatId, text, replyMarkup) {
+  return callTelegramApi("sendMessage", {
+    chat_id: chatId,
+    text,
+    parse_mode: "HTML",
+    reply_markup: replyMarkup,
+  });
 }
 
-const SEED_BASE = 20240101;
-
-function getCard(cartelaNumber) {
-  const rng = mulberry32(SEED_BASE + cartelaNumber);
-  const card = {};
-  for (const col of Object.keys(COLUMN_RANGES)) {
-    const [low, high] = COLUMN_RANGES[col];
-    const pool = [];
-    for (let n = low; n <= high; n++) pool.push(n);
-    card[col] = shuffle(pool, rng).slice(0, 5);
-  }
-  card.N[2] = "FREE";
-  return card;
+function answerCallbackQuery(callbackQueryId, text) {
+  return callTelegramApi("answerCallbackQuery", {
+    callback_query_id: callbackQueryId,
+    text,
+  });
 }
 
-function hasBingo(cartelaNumber, calledSet) {
-  const card = getCard(cartelaNumber);
-  const cols = ["B", "I", "N", "G", "O"];
-  const isMarked = (col, val) => val === "FREE" || calledSet.has(val);
-
-  for (let r = 0; r < 5; r++) {
-    if (cols.every((c) => isMarked(c, card[c][r]))) return true;
-  }
-  for (const c of cols) {
-    if (card[c].every((v) => isMarked(c, v))) return true;
-  }
-  if (cols.every((c, i) => isMarked(c, card[c][i]))) return true;
-  if (cols.every((c, i) => isMarked(c, card[c][4 - i]))) return true;
-  const corners = [
-    [cols[0], card[cols[0]][0]],
-    [cols[0], card[cols[0]][4]],
-    [cols[4], card[cols[4]][0]],
-    [cols[4], card[cols[4]][4]],
-  ];
-  if (corners.every(([c, v]) => isMarked(c, v))) return true;
-
-  return false;
+function editMessageText(chatId, messageId, text) {
+  return callTelegramApi("editMessageText", {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+    parse_mode: "HTML",
+  });
 }
 
-module.exports = { getCard, hasBingo };
+module.exports = { sendMessage, answerCallbackQuery, editMessageText };
